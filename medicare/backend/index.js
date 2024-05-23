@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const cors = require('cors');
 app.use(cors());
-// app.use('/', require('./routes'));
+app.use('/', require('./routes'));
 
 // start the server
 var server = app.listen(port, hostname, (err)=>{
