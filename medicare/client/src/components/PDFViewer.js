@@ -3,10 +3,10 @@
 //https://www.linkedin.com/pulse/file-uploads-made-easy-multer-package-nodejs-vinayak-sharma/
 //https://github.com/expressjs/multer/issues/302
 //https://www.tutorialspoint.com/nodejs/pdf/nodejs_response_object.pdf
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import axios from 'axios';
-import data from './SampleData';
+import Dropzone from './Dropzone';
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
 
 export default function Viewer() {
@@ -14,6 +14,8 @@ export default function Viewer() {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
     const [formData, setFormData] = useState(null);
+    const [upload, setUpload] = useState(null);
+    const [attributes, setAttributes] = useState([]);
 
     const onDocumentLoadSuccess = ({ numPages }) => {
         setNumPages(numPages);
@@ -22,11 +24,77 @@ export default function Viewer() {
     const goToPrevPage = () => setPageNumber((prevPage) => prevPage - 1);
     const goToNextPage = () => setPageNumber((prevPage) => prevPage + 1);
 
+    const reset = () => {
+        setNumPages(null);
+        setPageNumber(1);
+        setFormData(null);
+        setUpload(null);
+        setAttributes(null);
+    }
+
     useEffect(() => {
-        let form = {}
-        data.attributes.map(field => form[field.id] = field.value)
-        setFormData({ ...form });
-    }, [])
+        if (upload !== null) {
+            axios.post('http://localhost:5000/extract-pdf-text', {
+            filename: upload
+        })
+            .then((response) => {
+                let form = { ...response.data }
+                form.attributes.map(field => {
+                    if (field.value === "null") form[field.id] = null;
+                    else form[field.id] = field.value;
+                })
+                setFormData({ ...form });
+                setAttributes([...form.attributes])
+            })
+            .catch(error => {
+                window.alert("Error occurred while parsing the PDF!");
+                if (error.response) {
+                    console.log(error.response.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log('Error', error.message);
+                }
+                console.log(error.config);
+                reset();
+            });
+        }
+    }, [upload])
+
+    const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+        if (acceptedFiles.length == 0 || rejectedFiles.length > 0) {
+            window.alert("Please check the uploaded file. Only one pdf file of maximum size 1MB can be uploaded");
+        } else {
+            let uploadForm = new FormData();
+            uploadForm.append("file", acceptedFiles[0]);
+            axios.post('http://localhost:8000/reports/upload', uploadForm, {
+                headers: {
+                    "Content-Type": "application/pdf"
+                }
+            })
+                .then((response) => {
+                    console.log(response);
+                    //setUpload(response.data['filename'])
+                    setUpload('health_report.pdf');
+                })
+                .catch(error => {
+                    window.alert("Error occurred while uploading the PDF!");
+                    if (error.response) {
+                        console.log(error.response.data);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    } else if (error.request) {
+                        console.log(error.request);
+                    } else {
+                        console.log('Error', error.message);
+                    }
+                    console.log(error.config);
+                    reset();
+                });
+        };
+    }, []);
 
     const updateForm = (event, field) => {
         let updatedForm = { ...formData };
@@ -66,7 +134,7 @@ export default function Viewer() {
                             justify-content-center border border-2' onSubmit={handleSubmit}>
                                     <div className='h-full overflow-y-auto mb-2'>
                                         {
-                                            data.attributes.map(field =>
+                                            attributes.map(field =>
                                                 <div className="mb-3 d-flex flex-column px-2" key={`field-${field.id}`}>
                                                     <label htmlFor={`${field.id}`} className="form-label text-start">{field.id}</label>
                                                     <input type="text" className="form-control" value={`${formData[field.id] === null ? "" : formData[field.id]}`}
@@ -77,7 +145,7 @@ export default function Viewer() {
                                         }
                                     </div>
                                     <div className='w-full text-end mt-2 px-1'>
-                                        <button type="reset" className="btn btn-danger sticky-bottom me-2" onClick={() => setFormData(null)}>Discard</button>
+                                        <button type="reset" className="btn btn-danger sticky-bottom me-2" onClick={reset}>Discard</button>
                                         <button type="submit" className="btn btn-primary sticky-bottom">Validate</button>
                                     </div>
                                 </form>
@@ -106,7 +174,25 @@ export default function Viewer() {
                             </div>
                         </div>
                     </div>)
-                ) : <></>
+                ) : (
+                    <>
+                        {
+                            upload === null ? (
+                                <div className='container text-center'>
+                                    <img className='w-25 h-25' src='./Capture.png'></img>
+                                    <div className='w-full border border-2'><Dropzone onDrop={onDrop} /></div>
+                                </div>
+                            ) : (
+                                <div className='mt-4 d-flex justify-content-center align-items-center'>
+                                    <h1>Our AI Bot is analyzing the data ...</h1>
+                                    <div className="spinner-border" role="status">
+                                        <span className="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            )
+                        }
+                    </>
+                )
             }
         </>
     );
