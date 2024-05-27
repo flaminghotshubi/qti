@@ -16,6 +16,7 @@ export default function Viewer() {
     const [formData, setFormData] = useState(null);
     const [upload, setUpload] = useState(null);
     const [attributes, setAttributes] = useState([]);
+    const [file, setFile] = useState(null);
 
     const onDocumentLoadSuccess = ({ numPages }) => {
         setNumPages(numPages);
@@ -30,6 +31,7 @@ export default function Viewer() {
         setFormData(null);
         setUpload(null);
         setAttributes(null);
+        setFile(null);
     }
 
     useEffect(() => {
@@ -38,13 +40,14 @@ export default function Viewer() {
             filename: upload
         })
             .then((response) => {
-                let form = { ...response.data }
-                form.attributes.map(field => {
+                let data = { ...response.data };
+                let form = {};
+                data.attributes.map(field => {
                     if (field.value === "null") form[field.id] = null;
                     else form[field.id] = field.value;
                 })
-                setFormData({ ...form });
-                setAttributes([...form.attributes])
+                setFormData(form);
+                setAttributes([...data.attributes])
             })
             .catch(error => {
                 window.alert("Error occurred while parsing the PDF!");
@@ -75,9 +78,8 @@ export default function Viewer() {
                 }
             })
                 .then((response) => {
-                    console.log(response);
-                    //setUpload(response.data['filename'])
-                    setUpload('health_report.pdf');
+                    setUpload(response.data['filename']);
+                    setFile(acceptedFiles[0]);
                 })
                 .catch(error => {
                     window.alert("Error occurred while uploading the PDF!");
@@ -105,9 +107,11 @@ export default function Viewer() {
     const handleSubmit = (event) => {
         event.preventDefault();
         axios.post("http://localhost:8000/reports/create", {
-            ...formData
+            ...formData, name: file.name, path: upload
         })
-            .then((response) => { })
+            .then((response) => {
+                reset();
+            })
             .catch(error => {
                 window.alert("Error occurred while creating project!");
                 if (error.response) {
@@ -159,7 +163,7 @@ export default function Viewer() {
 
                                 <div className='d-flex justify-content-center align-items-center'>
                                     <Document
-                                        file='./uploads/health_report.pdf'
+                                        file={URL.createObjectURL(file)}
                                         onLoadSuccess={onDocumentLoadSuccess}
                                     >
                                         <Page pageNumber={pageNumber} renderTextLayer={false}

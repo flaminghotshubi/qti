@@ -2,7 +2,7 @@ import './App.css';
 import Navbar from './components/Navbar';
 import Homepage from './components/Homepage';
 import Viewer from './components/PDFViewer';
-import PDFParserReact from './components/Upload';
+import Uploads from './components/Uploads';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 
 function App() {
@@ -16,7 +16,8 @@ function App() {
         <SignInButton mode='modal' />
       </SignedOut> */}
       <Navbar />
-      <Viewer />
+      {/* <Viewer /> */}
+      <Uploads />
     </>
   );
 }

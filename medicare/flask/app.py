@@ -68,7 +68,7 @@ def extract_pdf_text():
     # os.makedirs(temp_dir, exist_ok=True)
     data = request.get_json()
     filename = data.get('filename', '')
-    basepath = r"G:\Web Development\QTIMinds\qti\medicare\client\public\uploads"
+    basepath = r"G:\Web Development\QTIMinds\qti\medicare\uploads"
     temp_file_path = basepath + "/" + filename
 
     try:
