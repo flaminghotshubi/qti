@@ -4,6 +4,27 @@ export default function Uploads() {
 
     const [reports, setReports] = useState(null)
 
+    const deleteReport = (filename) => {
+        axios.delete(`http://localhost:8000/reports/${filename}`)
+            .then((response) => {
+                let updatedReports = reports.filter(file=> file.path !== filename);
+                setReports([...updatedReports]);
+            })
+            .catch(error => {
+                window.alert("Error occurred while deleting report!");
+                if (error.response) {
+                    console.log(error.response.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log('Error', error.message);
+                }
+                console.log(error.config);
+            })
+    }
+
     const download = (filename) => {
         axios.get(`http://localhost:8000/reports/${filename}`,
             {
@@ -77,7 +98,7 @@ export default function Uploads() {
                                                 <span className='p-1 fw-normal fs-5'>{report.name}</span>
                                                 <div className=''>
                                                     <button type="button" className="btn btn-primary me-2" onClick={() => download(report.path)}>Download</button>
-                                                    <button type="button" className="btn btn-danger">Delete</button>
+                                                    <button type="button" className="btn btn-danger" onClick={() => deleteReport(report.path)}>Delete</button>
                                                 </div>
                                             </div>
                                         )

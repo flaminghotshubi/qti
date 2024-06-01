@@ -14,11 +14,11 @@ export default function Dropzone({ onDrop }) {
 
     return (
         <div {...getRootProps({ className: "dropzone" })} className="
-        d-flex justify-content-center align-items-center border-2 border-dashed">
+        d-flex justify-content-center align-items-center">
             <input {...getInputProps()} />
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">Drag and drop</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">PDF max 2 MB</p>
+            <div className="flex flex-col items-center justify-center pt-3 pb-6">
+                <p className="mb-1 text-sm text-gray-500 dark:text-gray-400">Drag & Drop</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">PDF (max size 2 MB)</p>
                 <button type="button" onClick={open} className="btn btn-primary mb-3">Click to upload</button>
             </div>
         </div>

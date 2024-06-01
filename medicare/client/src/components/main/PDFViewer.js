@@ -6,16 +6,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import axios from 'axios';
-import Dropzone from './Dropzone';
+import Dropzone from '../utils/Dropzone';
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
 
 export default function Viewer() {
 
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
+
+    // State for storing info going to db
     const [formData, setFormData] = useState(null);
+
+    // State for storing the path of uploaded file
     const [upload, setUpload] = useState(null);
+
+    //State for storing attributes of report returned by AI
     const [attributes, setAttributes] = useState([]);
+
+    //State for maintaining the File object
     const [file, setFile] = useState(null);
 
     const onDocumentLoadSuccess = ({ numPages }) => {
@@ -30,41 +38,41 @@ export default function Viewer() {
         setPageNumber(1);
         setFormData(null);
         setUpload(null);
-        setAttributes(null);
+        setAttributes([]);
         setFile(null);
     }
 
     useEffect(() => {
-        if (upload !== null) {
+        if (upload !== null && attributes.length === 0) {
             axios.post('http://localhost:5000/extract-pdf-text', {
-            filename: upload
-        })
-            .then((response) => {
-                let data = { ...response.data };
-                let form = {};
-                data.attributes.map(field => {
-                    if (field.value === "null") form[field.id] = null;
-                    else form[field.id] = field.value;
-                })
-                setFormData(form);
-                setAttributes([...data.attributes])
+                filename: upload
             })
-            .catch(error => {
-                window.alert("Error occurred while parsing the PDF!");
-                if (error.response) {
-                    console.log(error.response.data);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                } else if (error.request) {
-                    console.log(error.request);
-                } else {
-                    console.log('Error', error.message);
-                }
-                console.log(error.config);
-                reset();
-            });
+                .then((response) => {
+                    let data = { ...response.data };
+                    let form = {};
+                    data.attributes.map(field => {
+                        if (field.value === "null") form[field.id] = null;
+                        else form[field.id] = field.value;
+                    })
+                    setFormData(form);
+                    setAttributes([...data.attributes])
+                })
+                .catch(error => {
+                    window.alert("Error occurred while parsing the PDF!");
+                    if (error.response) {
+                        console.log(error.response.data);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    } else if (error.request) {
+                        console.log(error.request);
+                    } else {
+                        console.log('Error', error.message);
+                    }
+                    console.log(error.config);
+                    reset();
+                });
         }
-    }, [upload])
+    }, [upload, attributes])
 
     const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
         if (acceptedFiles.length == 0 || rejectedFiles.length > 0) {
@@ -127,6 +135,26 @@ export default function Viewer() {
             })
     }
 
+    const handleDelete = () => {
+        axios.delete(`http://localhost:8000/reports/${upload}`)
+            .then((response) => {
+                reset();
+            })
+            .catch(error => {
+                window.alert("Error occurred while discarding report changes!");
+                if (error.response) {
+                    console.log(error.response.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log('Error', error.message);
+                }
+                console.log(error.config);
+            })
+    }
+
     return (
         <>
             {
@@ -136,7 +164,7 @@ export default function Viewer() {
                             <div className="col p-5">
                                 <form className='m-4 p-2 h-50 text-center d-flex flex-column 
                             justify-content-center border border-2' onSubmit={handleSubmit}>
-                                    <div className='h-full overflow-y-auto mb-2'>
+                                    <div className='overflow-y-auto mb-2'>
                                         {
                                             attributes.map(field =>
                                                 <div className="mb-3 d-flex flex-column px-2" key={`field-${field.id}`}>
@@ -149,7 +177,7 @@ export default function Viewer() {
                                         }
                                     </div>
                                     <div className='w-full text-end mt-2 px-1'>
-                                        <button type="reset" className="btn btn-danger sticky-bottom me-2" onClick={reset}>Discard</button>
+                                        <button type="reset" className="btn btn-danger sticky-bottom me-2" onClick={handleDelete}>Discard</button>
                                         <button type="submit" className="btn btn-primary sticky-bottom">Validate</button>
                                     </div>
                                 </form>
@@ -183,13 +211,15 @@ export default function Viewer() {
                         {
                             upload === null ? (
                                 <div className='container text-center'>
-                                    <img className='w-25 h-25' src='./Capture.png'></img>
-                                    <div className='w-full border border-2'><Dropzone onDrop={onDrop} /></div>
+                                    <img className='w-25 h-25 pt-5' src='./assets/Capture.png'></img>
+                                    <div className='w-full border border-2 rounded bg-body-tertiary'>
+                                        <Dropzone onDrop={onDrop} />
+                                    </div>
                                 </div>
                             ) : (
-                                <div className='mt-4 d-flex justify-content-center align-items-center'>
-                                    <h1>Our AI Bot is analyzing the data ...</h1>
-                                    <div className="spinner-border" role="status">
+                                <div className='mt-4 d-flex flex-column justify-content-center align-items-center'>
+                                    <h1>MediMinder is analyzing the data, please wait for 2 minutes ...</h1>
+                                    <div className="spinner-border mt-4" role="status">
                                         <span className="visually-hidden">Loading...</span>
                                     </div>
                                 </div>
