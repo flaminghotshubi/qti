@@ -86,10 +86,10 @@ def call_google_gemini_gen_api(extracted_text):
     Call the Google Gemini Generative Model API to process extracted text.
     """
     # Define the medical report schema
-    medical_report_schema = {"id":"medical_report","description":"Extracted medical information from a given report.","attributes":[{"id":"patient_name","value":"null"},{"id":"patient_age","value":"null"},{"id":"patient_gender","value":"null"},{"id":"test_date","value":"null"},{"id":"tsh_level","value":"null"},{"id":"t3_level","value":"null"},{"id":"t4_level","value":"null"},{"id":"free_t3_level","value":"null"},{"id":"free_t4_level","value":"null"},{"id":"tpoab_level","value":"null"},{"id":"tgab_level","value":"null"},{"id":"interpretation","value":"null"},{"id":"recommendations","value":"null"},{"id":"additional_notes","value":"null"},{"id":"hospital_name","value":"null"},{"id":"hospital_contact","value":"null"}]}
+    medical_report_schema = {"id":"medical_report","description":"Extracted medical information from a given report.","attributes":[{"id":"patient_name","value":"null"},{"id":"patient_age","value":"null"},{"id":"patient_gender","value":"null"},{"id":"test_date","value":"null"},{"id":"tsh_level","value":"null"},{"id":"t3_level","value":"null"},{"id":"t4_level","value":"null"},{"id":"free_t3_level","value":"null"},{"id":"free_t4_level","value":"null"},{"id":"tpoab_level","value":"null"},{"id":"tgab_level","value":"null"},{"id":"interpretation","value":"null"},{"id":"recommendations","value":"null"},{"id":"additional_notes","value":"null"},{"id":"hospital_name","value":"null"},{"id":"hospital_contact","value":"null"},{"id":"Vitamin B12","value":"null"},{"id":"Calcium","value":"null"},{"id":"Glycated Hemoglobin","value":"null"},{"id":"Fasting Plasma Glucose","value":"null"}]}
 
     # Create the prompt for the API
-    prompt = f"Task: Medical Information Extraction , Description:  You're tasked with developing a system to extract medical information from text obtained by parsing a medical report PDF file. The extracted information needs to be filled into a provided JSON schema{medical_report_schema} please ensure to keep id and values in double inverted comma. \nInput: \n Here is a string representing text extracted from a medical report PDF:\n {extracted_text} \n The text will contain sections such as patient name, patient age, patient gender, test date, TSH level, T3 level, T4 level, free T3 level, free T4 level, TPOAb level, TGAb level, interpretation, recommendations, additional notes, hospital name and hospital contact. The values for recommendations and interpretation should not exceed 255 characters.\n\n Output: \n Fill in the schema attributes with the extracted information according to your analysis. If information is available, fill in the value; otherwise, leave it as null. \n {medical_report_schema}. Return the output as JSON."
+    prompt = f"Task: Medical Information Extraction , Description:  You're tasked with developing a system to extract medical information from text obtained by parsing a medical report PDF file. The extracted information needs to be filled into a provided JSON schema{medical_report_schema} please ensure to keep id and values in double inverted comma. \nInput: \n Here is a string representing text extracted from a medical report PDF:\n {extracted_text} \n The text will contain sections such as patient name, patient age, patient gender, test date, TSH level, T3 level, T4 level, free T3 level, free T4 level, TPOAb level, TGAb level, interpretation, recommendations, additional notes, hospital name, hospital contact, vitamin B12, calcium, glycated hemoglobin, fasting plasma glucose.\n\n Output: \n Fill in the schema attributes with the extracted information according to your analysis. If information is available, fill in the value; otherwise, leave it as null. \n {medical_report_schema}. Return the output as JSON."
 
     # Generate content using the model
     response = model.generate_content(prompt)
@@ -301,51 +301,53 @@ def handle_query():
 
         # Construct prompt for Gemini Pro
         prompt = f"""
-You are a health assistant specializing in analyzing thyroid health data. Your role is to act as a medical analyst, providing detailed insights, interpretations, and personalized recommendations based on the user's thyroid profile data. Follow these steps to ensure a comprehensive and accurate response:
+        You are a health assistant specializing in analyzing  medical profile data. Your role is to act as a medical analyst, providing detailed insights, interpretations, and personalized recommendations based on the user's medical profile data. Follow these steps to ensure a comprehensive and accurate response:
 
-Review the provided thyroid profile data:
+        Review the provided medical profile data:
 
-Test Date
-T3 Level
-Biological ref interval(t3_level)
-TSH Level
-Biological ref interval(tsh_level)
-T4 Level
-Biological ref interval(T4_level)
-Free T3 Level
-Free T4 Level
-TPOAb Level
-VITAMIN_B12
-Biological ref interval(Vitamin_B12)
-CALCIUM
-Biological ref interval(Calcium)
-Glycated Hemoglobin
-Biological ref interval(glycated haemoglobin)
-Interpretation
-Recommendations
-Additional Notes
-Interpret each parameter in the context of thyroid health, explaining what typical and atypical levels might indicate.
+        Test Date
+        T3 Level
+        Biological ref interval(t3_level)
+        TSH Level
+        Biological ref interval(tsh_level)
+        T4 Level
+        Biological ref interval(T4_level)
+        Free T3 Level
+        Free T4 Level
+        TPOAb Level
+        VITAMIN_B12
+        Biological ref interval(Vitamin_B12)
+        CALCIUM
+        Biological ref interval(Calcium)
+        Glycated Hemoglobin
+        Biological ref interval(glycated haemoglobin)
+        Fasting plasma glucose
+        Biological ref interval(Fasting plasma glucose)
+        Interpretation
+        Recommendations
+        Additional Notes
 
-Analyze the user's question in relation to their data, providing specific insights based on the values given and take the user query and when you are giving the answer it should be only relevant to question asked by the user. Give the answer within 30-50 words only and question relevant answer only.
+        Interpret each parameter in the context of  medical health, explaining what typical  levels might indicate.
 
-Offer personalized recommendations:
+        Analyze the user's question in relation to their data, providing specific insights based on the values given. Take the user query and give an answer relevant only to the question asked. Limit the answer to 30-50 words.
 
-Suggest potential lifestyle or dietary changes.
-Advise on possible medical treatments or follow-ups.
-Highlight any concerning trends or values that should be discussed with a healthcare professional.
-Identify any missing information that might be crucial for a complete analysis and guide the user on what additional data might be needed.
+        Offer personalized recommendations:
 
-Encourage professional consultation where appropriate, emphasizing the importance of professional healthcare advice for diagnosis and treatment.
+        Suggest potential lifestyle or dietary changes.
+        Advise on possible medical treatments or follow-ups.
+        Highlight any concerning trends or values that should be discussed with a healthcare professional.
+        Identify any missing information that might be crucial for a complete analysis and guide the user on what additional data might be needed.
 
-User Query:
-{user_query}
+        Encourage professional consultation where appropriate, emphasizing the importance of professional healthcare advice for diagnosis and treatment.
 
-User Thyroid Data:
-{user_data}
+        User Query:
+        {user_query}
 
-Generate a comprehensive answer based on the above data.
-"""
+        User medical profile Data:
+        {user_data}
 
+        Generate a comprehensive answer based on the above data.
+        """
         # Call the Generative AI model to generate a response
         response = model.generate_content(prompt)
         answer = response.text.strip()
@@ -412,13 +414,13 @@ def get_data():
         # Add the text box for Fasting Plasma Glucose graph
         if col == 'Fasting_plasma_glucose(mg/dL)':
             plt.text(0.95, 0.5, 
-                     "Normal   : 70 - 100\nImpaired Fasting Glucose  : 101 - 125\nDiabetes : >=126",
+                     "Non Diabetic             : < 5.6\nPre - Diabetic Range : 5.7 - 6.4\nDiabetic Range          : >= 6.5",
                      fontsize=12, bbox=dict(facecolor='white', alpha=0.5), transform=plt.gca().transAxes, verticalalignment='top', horizontalalignment='right')
 
         # Add the text box for Glycated Haemoglobin graph
         elif col == 'Glycated_haemoglobin(%)':
             plt.text(0.95, 0.5, 
-                     "Non Diabetic             : < 5.6\nPre - Diabetic Range : 5.7 - 6.4\nDiabetic Range          : >= 6.5",
+                     "Normal   : 70 - 100\nImpaired Fasting Glucose  : 101 - 125\nDiabetes : >=126",
                      fontsize=12, bbox=dict(facecolor='white', alpha=0.5), transform=plt.gca().transAxes, verticalalignment='top', horizontalalignment='right')
 
         plt.tight_layout()
