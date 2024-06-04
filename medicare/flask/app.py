@@ -414,13 +414,13 @@ def get_data():
         # Add the text box for Fasting Plasma Glucose graph
         if col == 'Fasting_plasma_glucose(mg/dL)':
             plt.text(0.95, 0.5, 
-                     "Non Diabetic             : < 5.6\nPre - Diabetic Range : 5.7 - 6.4\nDiabetic Range          : >= 6.5",
+                     "Normal   : 70 - 100\nImpaired Fasting Glucose  : 101 - 125\nDiabetes : >=126",
                      fontsize=12, bbox=dict(facecolor='white', alpha=0.5), transform=plt.gca().transAxes, verticalalignment='top', horizontalalignment='right')
-
+                     
         # Add the text box for Glycated Haemoglobin graph
         elif col == 'Glycated_haemoglobin(%)':
             plt.text(0.95, 0.5, 
-                     "Normal   : 70 - 100\nImpaired Fasting Glucose  : 101 - 125\nDiabetes : >=126",
+                     "Non Diabetic             : < 5.6\nPre - Diabetic Range : 5.7 - 6.4\nDiabetic Range          : >= 6.5",
                      fontsize=12, bbox=dict(facecolor='white', alpha=0.5), transform=plt.gca().transAxes, verticalalignment='top', horizontalalignment='right')
 
         plt.tight_layout()
