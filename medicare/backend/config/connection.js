@@ -1,5 +1,5 @@
 //https://medium.com/dscjssstu/pooling-connections-in-node-js-mysql-9685d5c03c30
-let mysql = require('mysql');
+let mysql = require('mysql2');
 
 let pool = mysql.createPool({
     connectionLimit: 4,
