@@ -85,7 +85,7 @@ module.exports.getReports = function (req, res) {
 module.exports.create = function (req, res) {
     try {
         const data = { ...req.body }
-        db.query(`INSERT INTO thyroid_reports (test_date, patient_name, patient_age, patient_gender, file_name, file_path, tsh_level, t3_level, t4_level, free_t3_level, free_t4_level, tpoab_level, tgab_level, interpretation, recommendations, additional_notes, hospital_name, hospital_contact) VALUES ("${data.test_date}", "${data.patient_name}", "${data.patient_age}", "${data.patient_gender}", "${data.name}", "${data.path}", "${data.tsh_level}", "${data.t3_level}", "${data.t4_level}", "${data.free_t3_level}", "${data.free_t4_level}", "${data.tpoab_level}", "${data.tgab_level}", "${data.interpretation}", "${data.recommendations}", "${data.additional_notes}", "${data.hospital_name}", "${data.hospital_contact}")`,
+        db.query(`INSERT INTO thyroid_reports (test_date, patient_name, patient_age, patient_gender, file_name, file_path, tsh_level, t3_level, t4_level, free_t3_level, free_t4_level, tpoab_level, tgab_level, vitamin_b12, calcium, glycated_haemoglobin, fasting_plasma_glucose, interpretation, recommendations, additional_notes, hospital_name, hospital_contact) VALUES ("${data.test_date}", "${data.patient_name}", "${data.patient_age}", "${data.patient_gender}", "${data.name}", "${data.path}", ${getDecimal(data.tsh_level)}, ${getDecimal(data.t3_level)}, ${getDecimal(data.t4_level)}, ${getDecimal(data.free_t3_level)}, ${getDecimal(data.free_t4_level)}, ${getDecimal(data.tpoab_level)}, ${getDecimal(data.tgab_level)}, ${getDecimal(data.vitamin_b12)}, ${getDecimal(data.calcium)}, ${getDecimal(data.glycated_haemoglobin)}, ${getDecimal(data.fasting_plasma_glucose)},"${data.interpretation}", "${data.recommendations}", "${data.additional_notes}", "${data.hospital_name}", "${data.hospital_contact}")`,
             (err, result) => {
                 if (err) {
                     console.log(err);
@@ -106,6 +106,17 @@ module.exports.create = function (req, res) {
             error: error
         })
     }
+}
+
+const getDecimal = (str) => {
+    let ans = null;
+    if(str !== null) {
+        const match = str.match(/\d+(\.\d+)?/);
+        if (match) {
+            ans = parseFloat(match[0]);
+        }
+    }
+    return ans;
 }
 
 const storage = multer.diskStorage({

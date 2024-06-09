@@ -86,10 +86,10 @@ def call_google_gemini_gen_api(extracted_text):
     Call the Google Gemini Generative Model API to process extracted text.
     """
     # Define the medical report schema
-    medical_report_schema = {"id":"medical_report","description":"Extracted medical information from a given report.","attributes":[{"id":"patient_name","value":"null"},{"id":"patient_age","value":"null"},{"id":"patient_gender","value":"null"},{"id":"test_date","value":"null"},{"id":"tsh_level","value":"null"},{"id":"t3_level","value":"null"},{"id":"t4_level","value":"null"},{"id":"free_t3_level","value":"null"},{"id":"free_t4_level","value":"null"},{"id":"tpoab_level","value":"null"},{"id":"tgab_level","value":"null"},{"id":"interpretation","value":"null"},{"id":"recommendations","value":"null"},{"id":"additional_notes","value":"null"},{"id":"hospital_name","value":"null"},{"id":"hospital_contact","value":"null"},{"id":"Vitamin B12","value":"null"},{"id":"Calcium","value":"null"},{"id":"Glycated Hemoglobin","value":"null"},{"id":"Fasting Plasma Glucose","value":"null"}]}
+    medical_report_schema = {"id":"medical_report","description":"Extracted medical information from a given report.","attributes":[{"id":"patient_name","value":"null"},{"id":"patient_age","value":"null"},{"id":"patient_gender","value":"null"},{"id":"test_date","value":"null"},{"id":"tsh_level","value":"null"},{"id":"t3_level","value":"null"},{"id":"t4_level","value":"null"},{"id":"free_t3_level","value":"null"},{"id":"free_t4_level","value":"null"},{"id":"tpoab_level","value":"null"},{"id":"tgab_level","value":"null"},{"id":"interpretation","value":"null"},{"id":"recommendations","value":"null"},{"id":"additional_notes","value":"null"},{"id":"hospital_name","value":"null"},{"id":"hospital_contact","value":"null"},{"id":"vitamin_b12","value":"null"},{"id":"calcium","value":"null"},{"id":"glycated_haemoglobin","value":"null"},{"id":"fasting_plasma_glucose","value":"null"}]}
 
     # Create the prompt for the API
-    prompt = f"Task: Medical Information Extraction , Description:  You're tasked with developing a system to extract medical information from text obtained by parsing a medical report PDF file. The extracted information needs to be filled into a provided JSON schema{medical_report_schema} please ensure to keep id and values in double inverted comma. \nInput: \n Here is a string representing text extracted from a medical report PDF:\n {extracted_text} \n The text will contain sections such as patient name, patient age, patient gender, test date, TSH level, T3 level, T4 level, free T3 level, free T4 level, TPOAb level, TGAb level, interpretation, recommendations, additional notes, hospital name, hospital contact, vitamin B12, calcium, glycated hemoglobin, fasting plasma glucose.\n\n Output: \n Fill in the schema attributes with the extracted information according to your analysis. If information is available, fill in the value; otherwise, leave it as null. \n {medical_report_schema}. Return the output as JSON."
+    prompt = f"Task: Medical Information Extraction , Description:  You're tasked with developing a system to extract medical information from text obtained by parsing a medical report PDF file. The extracted information needs to be filled into a provided JSON schema{medical_report_schema} please ensure to keep id and values in double inverted comma. \nInput: \n Here is a string representing text extracted from a medical report PDF:\n {extracted_text} \n The text will contain sections such as patient name, patient age, patient gender, test date, TSH level, T3 level, T4 level, free T3 level, free T4 level, TPOAb level, TGAb level, interpretation, recommendations, additional notes, hospital name, hospital contact, vitamin B12, calcium, glycated haemoglobin, fasting plasma glucose.\n\n Output: \n Convert the test date to dd-MMM-yyyy format. Fill in the schema attributes with the extracted information according to your analysis. If information is available, fill in the value; otherwise, leave it as null do not fill unit of values in schema . \n {medical_report_schema}. Return the output as JSON."
 
     # Generate content using the model
     response = model.generate_content(prompt)
@@ -371,7 +371,7 @@ def handle_query():
     
 @app.route('/data', methods=['GET'])
 def get_data():
-    user_id = 1  # Default user ID
+    # user_id = 1  # Default user ID
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Unable to connect to the database"}), 500
@@ -379,11 +379,10 @@ def get_data():
     try:
         cursor = conn.cursor()
         query = '''
-            SELECT TestDate, `Glycated_haemoglobin(%)`, `Fasting_plasma_glucose(mg/dL)`
-            FROM report 
-            WHERE `User_id` = %s;
+            SELECT test_date, glycated_haemoglobin, fasting_plasma_glucose
+            FROM thyroid_reports;
         '''
-        cursor.execute(query, (user_id,))
+        cursor.execute(query)
         rows = cursor.fetchall()
     finally:
         cursor.close()
@@ -392,33 +391,34 @@ def get_data():
     if not rows:
         return jsonify({"error": "No data found for the specified user-id"}), 404
     
-    columns = ['TestDate', 'Fasting_plasma_glucose(mg/dL)',  'Glycated_haemoglobin(%)']
+    columns = ['test_date', 'glycated_haemoglobin', 'fasting_plasma_glucose']
+    graph_columns = ['TestDate', 'Fasting_plasma_glucose(mg/dL)',  'Glycated_haemoglobin(%)']
     df = pd.DataFrame(rows, columns=columns)
-    df['TestDate'] = pd.to_datetime(df['TestDate'])
+    df['test_date'] = pd.to_datetime(df['test_date'])
     
     plot_images = []
-    for col in columns[1:]:
+    for (col, graphcol) in zip(columns[1:], graph_columns[1:]):
         buffer = BytesIO()
         plt.figure(figsize=(10, 6))
-        plt.plot(df['TestDate'], df[col], label=col, marker='o', linestyle='-', color='b', markersize=8, markerfacecolor='red')
+        plt.plot(df['test_date'], df[col], label=col, marker='o', linestyle='-', color='b', markersize=8, markerfacecolor='red')
         plt.xlabel('Test Date')
-        plt.ylabel(col)
-        plt.title(f'Test Date vs {col}')
+        plt.ylabel(graphcol)
+        plt.title(f'Test Date vs {graphcol}')
         plt.xticks(rotation=45)
         plt.legend()
         
         # Add value labels to the markers
         for i, txt in enumerate(df[col]):
-            plt.annotate(f'{txt:.2f}', (df['TestDate'].iloc[i], df[col].iloc[i]), textcoords="offset points", xytext=(0,10), ha='center')
+            plt.annotate(f'{txt:.2f}', (df['test_date'].iloc[i], df[col].iloc[i]), textcoords="offset points", xytext=(0,10), ha='center')
 
         # Add the text box for Fasting Plasma Glucose graph
-        if col == 'Fasting_plasma_glucose(mg/dL)':
+        if graphcol == 'Fasting_plasma_glucose(mg/dL)':
             plt.text(0.95, 0.5, 
                      "Normal   : 70 - 100\nImpaired Fasting Glucose  : 101 - 125\nDiabetes : >=126",
                      fontsize=12, bbox=dict(facecolor='white', alpha=0.5), transform=plt.gca().transAxes, verticalalignment='top', horizontalalignment='right')
                      
         # Add the text box for Glycated Haemoglobin graph
-        elif col == 'Glycated_haemoglobin(%)':
+        elif graphcol == 'Glycated_haemoglobin(%)':
             plt.text(0.95, 0.5, 
                      "Non Diabetic             : < 5.6\nPre - Diabetic Range : 5.7 - 6.4\nDiabetic Range          : >= 6.5",
                      fontsize=12, bbox=dict(facecolor='white', alpha=0.5), transform=plt.gca().transAxes, verticalalignment='top', horizontalalignment='right')
