@@ -89,7 +89,7 @@ def call_google_gemini_gen_api(extracted_text):
     medical_report_schema = {"id":"medical_report","description":"Extracted medical information from a given report.","attributes":[{"id":"patient_name","value":"null"},{"id":"patient_age","value":"null"},{"id":"patient_gender","value":"null"},{"id":"test_date","value":"null"},{"id":"tsh_level","value":"null"},{"id":"t3_level","value":"null"},{"id":"t4_level","value":"null"},{"id":"free_t3_level","value":"null"},{"id":"free_t4_level","value":"null"},{"id":"tpoab_level","value":"null"},{"id":"tgab_level","value":"null"},{"id":"interpretation","value":"null"},{"id":"recommendations","value":"null"},{"id":"additional_notes","value":"null"},{"id":"hospital_name","value":"null"},{"id":"hospital_contact","value":"null"},{"id":"vitamin_b12","value":"null"},{"id":"calcium","value":"null"},{"id":"glycated_haemoglobin","value":"null"},{"id":"fasting_plasma_glucose","value":"null"}]}
 
     # Create the prompt for the API
-    prompt = f"Task: Medical Information Extraction , Description:  You're tasked with developing a system to extract medical information from text obtained by parsing a medical report PDF file. The extracted information needs to be filled into a provided JSON schema{medical_report_schema} please ensure to keep id and values in double inverted comma. \nInput: \n Here is a string representing text extracted from a medical report PDF:\n {extracted_text} \n The text will contain sections such as patient name, patient age, patient gender, test date, TSH level, T3 level, T4 level, free T3 level, free T4 level, TPOAb level, TGAb level, interpretation, recommendations, additional notes, hospital name, hospital contact, vitamin B12, calcium, glycated haemoglobin, fasting plasma glucose.\n\n Output: \n Convert the test date to dd-MMM-yyyy format. Fill in the schema attributes with the extracted information according to your analysis. If information is available, fill in the value; otherwise, leave it as null do not fill unit of values in schema . \n {medical_report_schema}. Return the output as JSON."
+    prompt = f"Task: Medical Information Extraction , Description:  You're tasked with developing a system to extract medical information from text obtained by parsing a medical report PDF file. The extracted information needs to be filled into a provided JSON schema{medical_report_schema} please ensure to keep id and values in double inverted comma. \nInput: \n Here is a string representing text extracted from a medical report PDF:\n {extracted_text} \n The text will contain sections such as patient name, patient age, patient gender, test date, TSH level, T3 level, T4 level, free T3 level, free T4 level, TPOAb level, TGAb level, interpretation, recommendations, additional notes, hospital name, hospital contact, vitamin B12, calcium, glycated haemoglobin, fasting plasma glucose.\n\n Output: \n Convert the test date to YYYY-MM-DD format. Fill in the schema attributes with the extracted information according to your analysis. If information is available, fill in the value; otherwise, leave it as null do not fill unit of values in schema . \n {medical_report_schema}. Return the output as JSON."
 
     # Generate content using the model
     response = model.generate_content(prompt)
@@ -225,6 +225,7 @@ def extract_pdf_text():
         
     except Exception as e:
         print(e)
+        os.remove(temp_file_path);
         return jsonify({"error": str(e)}), 500
     
 @app.route('/reports', methods=['GET'])
@@ -380,7 +381,11 @@ def get_data():
         cursor = conn.cursor()
         query = '''
             SELECT test_date, glycated_haemoglobin, fasting_plasma_glucose
-            FROM thyroid_reports;
+            FROM thyroid_reports WHERE 
+            (test_date is NOT NULL AND 
+            glycated_haemoglobin is NOT NULL AND 
+            fasting_plasma_glucose is NOT NULL)
+            ORDER BY test_date;
         '''
         cursor.execute(query)
         rows = cursor.fetchall()
@@ -392,7 +397,7 @@ def get_data():
         return jsonify({"error": "No data found for the specified user-id"}), 404
     
     columns = ['test_date', 'glycated_haemoglobin', 'fasting_plasma_glucose']
-    graph_columns = ['TestDate', 'Fasting_plasma_glucose(mg/dL)',  'Glycated_haemoglobin(%)']
+    graph_columns = ['TestDate',  'Glycated_haemoglobin(%)', 'Fasting_plasma_glucose(mg/dL)']
     df = pd.DataFrame(rows, columns=columns)
     df['test_date'] = pd.to_datetime(df['test_date'])
     
